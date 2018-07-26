@@ -1,0 +1,214 @@
+#!/bin/bash
+#
+# Script to detect fake videos, based upon a 'database' of screenshots of fake videos.
+# Comments, changes and fixes welcome!
+#
+# Author: David Nedved
+# https://github.com/david-nedved/ultimate-plex-setup/
+#
+
+SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
+
+# Default threshold
+MATCH_THRESHOLD="0.20"
+
+# If changing the temp directory, ensure that it is an absolute path and not relative.
+PROCESSING_DIRECTORY="$SCRIPTPATH/tmp"
+
+####################################################################################################
+
+BLACKLIST_DIR="blacklist-originals"
+RESIZED_DIR="blacklist-resized"
+
+function title() {
+    echo -e "Fake Video Detector."
+}
+
+function usage()
+{
+    echo -e "\nThis program attempts to auto-match & delete fake movies that may have been downloaded based on a 'thumbnail' blacklist."
+    echo -e "Blacklisted videos are detected, based upon a screen-shot which is taken from a random point in time in the video specified."
+    echo -e "If any matches are found, the script will then either log or totally remove the file."
+    echo -e "\nAuthor: David Nedved\nBugs: https://github.com/david-nedved/ultimate-plex-setup/issues"
+    echo -e "\n\nUsage:\n"
+    echo -e "$0"
+    echo -e "\t-h --help"
+    echo -e "\t--video=\"<path>\" \t Specify full path to video file in double quotes"
+    echo -e "\t--threshold=\"0.20\" \t The threshold (between 0 - 1) that a video is matched against - a value of 0 will be blacklisted, and 1 will count as passing. Suggest leaving at default of 0.20"
+    echo -e "\t--build-thumbnails \t Builds the '$RESIZED_DIR' directory, this needs to be run if you add or update thumbnails of blacklisted videos"
+    echo -e "\t--silent \t\t Suppresses all output - Will return an exit code of '1' for any matching fake videos, and '0' for all other scenarios" 
+    echo -e "\t--log \t\t Logs result of each video into file ($0.log) - Works well with --silent flag" 
+    echo -e "\t--remove \t\t If specified, will auto-delete the file"
+    echo -e ""
+}
+
+ffMpegInstalled() {
+    if ! [ -x "$(command -v ffmpeg)" ]; then
+        echo 'Please install ffmpeg on this host before running this tool' >&2
+        exit 1
+    fi
+}
+
+buildTumbnails() {
+
+    echo -e "Building thumbnails list to match against...\n"
+
+    # Create directories if they don't exist...
+    mkdir -p {$RESIZED_DIR,$BLACKLIST_DIR}
+
+    SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
+
+    # down-size images (it's more accurate matching images that are smaller)
+    for image in $BLACKLIST_DIR/*; do
+
+        filename="${image##*/}" 
+        echo $filename
+
+        docker run --rm --privileged -v "$SCRIPTPATH/$BLACKLIST_DIR":/src -v "$SCRIPTPATH/$RESIZED_DIR":/dst -it libpuzzle \
+            mogrify -resize x200 -path /dst/ -format jpg /src/$filename
+
+    done
+    echo ""
+}
+
+checkBlacklistVideosExists() {
+    if [ ! -d "$RESIZED_DIR" ]; then
+        if [ -z "$(ls -A $BLACKLIST_DIR)" ]; then
+            echo "There are no blacklist originals, please add screenshots of fake videos in the: '$BLACKLIST_DIR' directory to begin."
+        else
+            buildTumbnails
+        fi
+    fi
+
+    if [ -z "$(ls -A $RESIZED_DIR)" ]; then
+        if [ -z "$(ls -A $BLACKLIST_DIR)" ]; then
+            echo "There are no blacklist originals, please add screenshots of fake videos in the: '$BLACKLIST_DIR' directory to begin."
+        else
+            buildTumbnails
+        fi
+    fi
+}
+
+cleanUp() {
+    rm -rf "$PROCESSING_DIRECTORY"
+}
+
+REMOVE_FILES=0
+SILENT=0
+LOG=0
+TEMP_MATCH_FILE_NAME="$RANDOM$RANDOM$RANDOM.jpg"
+TEMP_MATCH_FILE="$PROCESSING_DIRECTORY/$TEMP_MATCH_FILE_NAME"
+
+while [ "$1" != "" ]; do
+    PARAM=`echo $1 | awk -F= '{print $1}'`
+    VALUE=`echo $1 | awk -F= '{print $2}'`
+    case $PARAM in
+        -h | --help)
+            usage
+            exit
+            ;;
+        --video)
+            INPUT_FILE=$VALUE
+            ;;
+        --remove)
+            REMOVE_FILES=1
+            ;;
+        --silent)
+            SILENT=1
+            ;;
+        --log)
+            LOG=1
+            ;;
+        --threshold)
+            MATCH_THRESHOLD=$VALUE
+            ;;
+        --build-thumbnails)
+            BUILD_THUMBNAILS=1
+            ;;
+        *)
+            echo "ERROR: unknown parameter \"$PARAM\""
+            usage
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+if [ "$SILENT" -ne 1 ]; then
+    title
+fi
+
+ffMpegInstalled
+
+if [ "$BUILD_THUMBNAILS" = 1 ]; then
+    buildTumbnails
+    exit 0
+fi
+
+if [ -z "$INPUT_FILE" ]; then
+    echo "Please specify an input video file! See --help for further details."
+    exit 0
+fi
+
+checkBlacklistVideosExists
+if [ "$SILENT" -ne 1 ]; then
+    echo ""
+fi
+
+
+mkdir -p $PROCESSING_DIRECTORY/shrunk
+DURATION=`ffmpeg -loglevel panic -hide_banner -i "$INPUT_FILE" 2>&1 | grep Duration | awk '{print $2}' | tr -d , | awk -F ':' '{print ($3+$2*60+$1*3600)/2}'`
+RANDOM_FRAME=`awk -v min=0 -v max=$DURATION 'BEGIN{srand(); print int(min+rand()*(max-min+1))}'`
+
+# Take screenshot based on a random frame (in seconds) of the file
+if [ "$SILENT" -ne 1 ]; then
+    echo "Creating video thumbnail..."
+fi
+
+ffmpeg -loglevel panic -hide_banner -i "$INPUT_FILE" -vcodec mjpeg -vframes 1 -an -f rawvideo -ss $RANDOM_FRAME -preset veryfast "$TEMP_MATCH_FILE"
+
+if [ "$SILENT" -ne 1 ]; then
+    echo "Downsizing thumbnail..."
+fi
+# down-size screenshot from video (it's more accurate matching images that are smaller so subtle changes are detected)
+docker run --rm --privileged -v "$PROCESSING_DIRECTORY":/screenshot -it libpuzzle \
+    mogrify -resize x200 -path /screenshot/shrunk -format jpg /screenshot/$TEMP_MATCH_FILE_NAME
+
+if [ "$SILENT" -ne 1 ]; then
+    echo "Comparing against blacklisted videos..."
+fi
+for image in $SCRIPTPATH/$RESIZED_DIR/*; do
+
+    # compare blacklisted image with screenshot from movie
+    filename="${image##*/}" 
+
+    # A result of 0 is a match, anything less than about 0.10 will probably be a match...
+    docker run --rm --privileged -v "$SCRIPTPATH/$RESIZED_DIR":/blacklist -v "$PROCESSING_DIRECTORY":/process -it libpuzzle \
+        puzzle-diff /process/shrunk/$TEMP_MATCH_FILE_NAME /blacklist/$filename > $PROCESSING_DIRECTORY/$TEMP_MATCH_FILE_NAME.result
+
+    MATCH_RESULT=`cat "$PROCESSING_DIRECTORY/$TEMP_MATCH_FILE_NAME.result"`
+
+    if (( $(echo "$MATCH_THRESHOLD $MATCH_RESULT" | awk '{print ($1 > $2)}') )); then
+
+        if [ "$SILENT" -ne 1 ]; then
+            echo "NOTICE: File was detected as a fake: [$INPUT_FILE]"
+        fi
+
+        if [ "$LOG" -eq 1 ]; then
+            echo -e "FAKE:\t$INPUT_FILE" >> $0.log
+        fi
+
+        if [ $REMOVE_FILES = 1 ]; then
+            rm -rf "$INPUT_FILE"
+        fi
+
+        cleanUp
+        exit 1
+    fi
+done
+
+if [ "$LOG" -eq 1 ]; then
+    echo -e "OK:\t$INPUT_FILE" >> $0.log
+fi
+
+cleanUp

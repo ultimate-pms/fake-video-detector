@@ -1,0 +1,4 @@
+blacklist-resized
+tmp
+*.log
+*.txt
