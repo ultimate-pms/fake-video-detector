@@ -37,7 +37,7 @@ function usage()
     echo -e "\t--threshold=\"0.20\" \t The threshold (between 0 - 1) that a video is matched against - a value of 0 will be blacklisted, and 1 will count as passing. Suggest leaving at default of 0.20"
     echo -e "\t--build-thumbnails \t Builds the '$RESIZED_DIR' directory, this needs to be run if you add or update thumbnails of blacklisted videos"
     echo -e "\t--silent \t\t Suppresses all output - Will return an exit code of '1' for any matching fake videos, and '0' for all other scenarios" 
-    echo -e "\t--log \t\t Logs result of each video into file ($0.log) - Works well with --silent flag" 
+    echo -e "\t--log \t\t\t Logs result of each video into file ($0.log) - Works well with --silent flag" 
     echo -e "\t--remove \t\t If specified, will auto-delete the file"
     echo -e ""
 }

@@ -54,7 +54,7 @@ This is the main script which actually processes the video file. If you are inte
 	--threshold="0.20" 	 The threshold (between 0 - 1) that a video is matched against - a value of 0 will be blacklisted, and 1 will count as passing. Suggest leaving at default of 0.20
 	--build-thumbnails 	 Builds the 'blacklist-resized' directory, this needs to be run if you add or update thumbnails of blacklisted videos
 	--silent 		 Suppresses all output - Will return an exit code of '1' for any matching fake videos, and '0' for all other scenarios
-	--log 		 Logs result of each video into file (./fake-video.log) - Works well with --silent flag
+	--log 			 Logs result of each video into file (./fake-video.log) - Works well with --silent flag
 	--remove 		 If specified, will auto-delete the file
 
 ```
