@@ -10,7 +10,7 @@ dockerInstalled() {
 }
 
 dockerInstalled
-cd libpuzzle-docker && docker build -t libpuzzle .
+cd libpuzzle && docker build -t libpuzzle .
 
 echo -e "BE SURE TO MANUALLY INSTALL: ffmpeg\n\n"
 
