@@ -2,3 +2,4 @@ blacklist-resized
 tmp
 *.log
 *.txt
+.DS_Store
