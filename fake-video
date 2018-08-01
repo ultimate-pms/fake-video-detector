@@ -8,6 +8,7 @@
 #
 
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
+cd $SCRIPTPATH
 
 # Default threshold
 MATCH_THRESHOLD="0.20"
@@ -33,7 +34,7 @@ function usage()
     echo -e "\n\nUsage:\n"
     echo -e "$0"
     echo -e "\t-h --help"
-    echo -e "\t--video=\"<path>\" \t Specify full path to video file in double quotes"
+    echo -e "\t--video=\"<path>\" \t Specify full, absolute path to video file in double quotes"
     echo -e "\t--threshold=\"0.20\" \t The threshold (between 0 - 1) that a video is matched against - a value of 0 will be blacklisted, and 1 will count as passing. Suggest leaving at default of 0.20"
     echo -e "\t--build-thumbnails \t Builds the '$RESIZED_DIR' directory, this needs to be run if you add or update thumbnails of blacklisted videos"
     echo -e "\t--silent \t\t Suppresses all output - Will return an exit code of '1' for any matching fake videos, and '0' for all other scenarios" 
@@ -156,7 +157,7 @@ fi
 
 
 mkdir -p $PROCESSING_DIRECTORY/shrunk
-DURATION=`ffmpeg -loglevel panic -hide_banner -i "$INPUT_FILE" 2>&1 | grep Duration | awk '{print $2}' | tr -d , | awk -F ':' '{print ($3+$2*60+$1*3600)/2}'`
+DURATION=`ffmpeg -loglevel info -hide_banner -i "$INPUT_FILE" 2>&1 | grep Duration | awk '{print $2}' | tr -d , | awk -F ':' '{print ($3+$2*60+$1*3600)/2}'`
 RANDOM_FRAME=`awk -v min=0 -v max=$DURATION 'BEGIN{srand(); print int(min+rand()*(max-min+1))}'`
 
 # Take screenshot based on a random frame (in seconds) of the file
