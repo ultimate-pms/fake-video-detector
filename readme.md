@@ -20,13 +20,17 @@ It is intended to be used in combination with your PVR so you can automatically 
 --------------------------------------------------------
 
 ## Prerequisites:
-The script requires at a minimum:
+The script straight out of the box, you'll require:
 
 - Docker
 - Ffmpeg
 - Linux based system
 
 *(I'm planning on moving `ffmpeg` into docker so that it does not manually need to be installed on the host when I have spare time)*
+
+### Running without Docker:
+
+If you must run the script without docker (you may also use the copy of the script in the [no-docker](https://github.com/ultimate-pms/fake-video-detector/tree/no-docker) branch, however it will install ffmpeg, libpizzle, and mogrify on your system).
 
 ## Installing:
 Run `./setup.sh` to build local docker container, before running `search-nas` or `fake-video`.
