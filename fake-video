@@ -63,9 +63,8 @@ buildTumbnails() {
 
         filename="${image##*/}" 
         echo $filename
-
-        docker run --rm --privileged -v "$SCRIPTPATH/$BLACKLIST_DIR":/src -v "$SCRIPTPATH/$RESIZED_DIR":/dst -it libpuzzle \
-            mogrify -resize x200 -path /dst/ -format jpg /src/$filename
+        
+        mogrify -resize x200 -path "$SCRIPTPATH/$RESIZED_DIR/" -format jpg "$SCRIPTPATH/$BLACKLIST_DIR/$filename"
 
     done
     echo ""
@@ -171,8 +170,8 @@ if [ "$SILENT" -ne 1 ]; then
     echo "Downsizing thumbnail..."
 fi
 # down-size screenshot from video (it's more accurate matching images that are smaller so subtle changes are detected)
-docker run --rm --privileged -v "$PROCESSING_DIRECTORY":/screenshot -it libpuzzle \
-    mogrify -resize x200 -path /screenshot/shrunk -format jpg /screenshot/$TEMP_MATCH_FILE_NAME
+mogrify -resize x200 -path "$PROCESSING_DIRECTORY/shrunk" -format jpg "$PROCESSING_DIRECTORY/$TEMP_MATCH_FILE_NAME"
+
 
 if [ "$SILENT" -ne 1 ]; then
     echo "Comparing against blacklisted videos..."
@@ -182,9 +181,8 @@ for image in $SCRIPTPATH/$RESIZED_DIR/*; do
     # compare blacklisted image with screenshot from movie
     filename="${image##*/}" 
 
-    # A result of 0 is a match, anything less than about 0.10 will probably be a match...
-    docker run --rm --privileged -v "$SCRIPTPATH/$RESIZED_DIR":/blacklist -v "$PROCESSING_DIRECTORY":/process -it libpuzzle \
-        puzzle-diff /process/shrunk/$TEMP_MATCH_FILE_NAME /blacklist/$filename > $PROCESSING_DIRECTORY/$TEMP_MATCH_FILE_NAME.result
+    # A result of 0 is a match, anything less than about 0.10 will probably be a match...    
+    puzzle-diff "$PROCESSING_DIRECTORY/shrunk/$TEMP_MATCH_FILE_NAME" "$SCRIPTPATH/$RESIZED_DIR/$filename" > "$PROCESSING_DIRECTORY/$TEMP_MATCH_FILE_NAME.result"
 
     MATCH_RESULT=`cat "$PROCESSING_DIRECTORY/$TEMP_MATCH_FILE_NAME.result"`
 

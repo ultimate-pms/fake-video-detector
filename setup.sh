@@ -1,33 +1,17 @@
 #!/bin/bash
 #
-# Build docker-container
+# Setup on local ubuntu machine without docker...
 
-dockerInstalled() {
-    if ! [ -x "$(command -v docker)" ]; then
-        echo 'Please install docker first, before running this project: https://www.docker.com/' >&2
-        exit 1
-    fi
-}
+apt-get install imagemagick ffmpeg -y
 
-dockerInstalled
-cd libpuzzle && docker build -t libpuzzle .
+apt-get update -q
+apt-get install -q -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" libgd2-dev libpuzzle-bin
+apt-get install -q -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" build-essential
+apt-get install -q -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" libtool m4 automake
 
-echo -e "BE SURE TO MANUALLY INSTALL: ffmpeg\n\n"
+cd libpuzzle
 
-cat << EOF
-    CentOS 7 Instructions:
-    ------------------------------
-    sudo yum install epel-release -y
-    sudo rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
-    sudo rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-5.el7.nux.noarch.rpm
-    sudo yum install ffmpeg ffmpeg-devel -y
-
-
-    Ubuntu Instructions:
-    ------------------------------
-    sudo add-apt-repository ppa:mc3man/trusty-media
-    sudo apt-get update
-    sudo apt-get dist-upgrade
-    sudo apt-get install ffmpeg
-
-EOF
+./autogen.sh
+./configure
+make
+make install
