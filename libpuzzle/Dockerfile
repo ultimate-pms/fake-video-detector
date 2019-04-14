@@ -8,13 +8,13 @@ RUN apt-get install -q -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options:
 RUN apt-get install -q -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" libtool m4 automake
 
 RUN apt-get install imagemagick -y
-ADD ./ /root/
+ADD ./ /opt/libpuzzle/
 
-WORKDIR /root/
+WORKDIR /opt/libpuzzle/
 
-RUN ./autogen.sh
-RUN ./configure
-RUN make
-RUN make install
+RUN cd /opt/libpuzzle/ && \
+    ./autogen.sh && \
+    ./configure && \
+    make && make install
 
 #ENTRYPOINT puzzle-diff

@@ -13,12 +13,20 @@ SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 MATCH_THRESHOLD="0.20"
 
 # If changing the temp directory, ensure that it is an absolute path and not relative.
-PROCESSING_DIRECTORY="$SCRIPTPATH/tmp"
+PROCESSING_DIRECTORY="/tmp/fake-video-tmp"
+
+if [ ! -f /.dockerenv ]; then
+    echo -e "NOTICE:\n\nPlease run this script from within the 'fake-video' docker container...\nSee README.md for further details.\n"
+    exit 1
+fi
+
 
 ####################################################################################################
 
-BLACKLIST_DIR="blacklist-originals"
-RESIZED_DIR="blacklist-resized"
+MY_PWD="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+BLACKLIST_DIR="$MY_PWD/../blacklist-originals"
+RESIZED_DIR="/opt/blacklist-resized"
 
 function title() {
     echo -e "Fake Video Detector."
@@ -56,16 +64,13 @@ buildTumbnails() {
     # Create directories if they don't exist...
     mkdir -p {$RESIZED_DIR,$BLACKLIST_DIR}
 
-    SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
-
     # down-size images (it's more accurate matching images that are smaller)
     for image in $BLACKLIST_DIR/*; do
 
         filename="${image##*/}" 
         echo $filename
 
-        docker run --rm --privileged -v "$SCRIPTPATH/$BLACKLIST_DIR":/src -v "$SCRIPTPATH/$RESIZED_DIR":/dst -it libpuzzle \
-            mogrify -resize x200 -path /dst/ -format jpg /src/$filename
+        mogrify -resize x200 -path "$RESIZED_DIR" -format jpg "$BLACKLIST_DIR/$filename"
 
     done
     echo ""
@@ -146,7 +151,7 @@ if [ "$BUILD_THUMBNAILS" = 1 ]; then
 fi
 
 if [ -z "$INPUT_FILE" ]; then
-    echo "Please specify an input video file! See --help for further details."
+    echo -e "Please specify an input video file!\n See --help for further details."
     exit 0
 fi
 
@@ -171,20 +176,18 @@ if [ "$SILENT" -ne 1 ]; then
     echo "Downsizing thumbnail..."
 fi
 # down-size screenshot from video (it's more accurate matching images that are smaller so subtle changes are detected)
-docker run --rm --privileged -v "$PROCESSING_DIRECTORY":/screenshot -it libpuzzle \
-    mogrify -resize x200 -path /screenshot/shrunk -format jpg /screenshot/$TEMP_MATCH_FILE_NAME
+mogrify -resize x200 -path "$PROCESSING_DIRECTORY/shrunk" -format jpg "$PROCESSING_DIRECTORY/$TEMP_MATCH_FILE_NAME"
 
 if [ "$SILENT" -ne 1 ]; then
     echo "Comparing against blacklisted videos..."
 fi
-for image in $SCRIPTPATH/$RESIZED_DIR/*; do
+for image in $RESIZED_DIR/*; do
 
     # compare blacklisted image with screenshot from movie
     filename="${image##*/}" 
 
     # A result of 0 is a match, anything less than about 0.10 will probably be a match...
-    docker run --rm --privileged -v "$SCRIPTPATH/$RESIZED_DIR":/blacklist -v "$PROCESSING_DIRECTORY":/process -it libpuzzle \
-        puzzle-diff /process/shrunk/$TEMP_MATCH_FILE_NAME /blacklist/$filename > $PROCESSING_DIRECTORY/$TEMP_MATCH_FILE_NAME.result
+    puzzle-diff "$PROCESSING_DIRECTORY/shrunk/$TEMP_MATCH_FILE_NAME" "$RESIZED_DIR/$filename" > $PROCESSING_DIRECTORY/$TEMP_MATCH_FILE_NAME.result
 
     MATCH_RESULT=`cat "$PROCESSING_DIRECTORY/$TEMP_MATCH_FILE_NAME.result"`
 
