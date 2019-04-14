@@ -10,24 +10,26 @@ dockerInstalled() {
 }
 
 dockerInstalled
-cd libpuzzle && docker build -t libpuzzle .
-
-echo -e "BE SURE TO MANUALLY INSTALL: ffmpeg\n\n"
-
-cat << EOF
-    CentOS 7 Instructions:
-    ------------------------------
-    sudo yum install epel-release -y
-    sudo rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
-    sudo rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-5.el7.nux.noarch.rpm
-    sudo yum install ffmpeg ffmpeg-devel -y
 
 
-    Ubuntu Instructions:
-    ------------------------------
-    sudo add-apt-repository ppa:mc3man/trusty-media
-    sudo apt-get update
-    sudo apt-get dist-upgrade
-    sudo apt-get install ffmpeg
+if [ "$(cat ~/.zshrc | grep fake-video | wc -l)" -eq "0" ] && [ "$(cat ~/.bashrc | grep fake-video | wc -l)" -eq "0" ] ;then
 
-EOF
+    echo ">>>> Please specify the full path to your media directory"
+    read -p 'Media Directory: ' MEDIA_DIR
+
+    if [ -z $MEDIA_DIR ] ; then
+        echo "<<<<<<<<<<<<<<<<<< You configure the 'Media Directory' to continue >>>>>>>>>>>>>>>>>>"
+        exit 1
+    fi
+
+    echo -e "\nalias fake-video='docker run -it --rm --privileged -v \"$MEDIA_DIR:$MEDIA_DIR\" fake-video'" | tee -a ~/.bashrc ~/.zshrc
+    echo -e "\nalias bulk-search='docker run -it --rm --privileged -v \"$MEDIA_DIR:$MEDIA_DIR\" bulk-search'" | tee -a ~/.bashrc ~/.zshrc
+    
+    source ~/.bashrc ~/.zshrc
+
+else
+
+    echo "System is already setup!"
+    echo "Please remove the alias in your ~/.bashrc and ~/.zshrc files if you wish to re-run the setup process."
+
+fi

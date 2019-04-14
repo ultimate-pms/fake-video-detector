@@ -31,7 +31,7 @@ The script straight out of the box, you'll require:
 
 ### Running without Docker:
 
-If you _must_ run the script without docker, you may use the copy of the script in the [no-docker](https://github.com/ultimate-pms/fake-video-detector/tree/no-docker) branch, howeverffmpeg, libpizzle, and mogrify MUST be installed on your system - This branch is also no-longer maintained as of April 2019.
+If you _must_ run the script without docker, you may use the copy of the script in the [no-docker](https://github.com/ultimate-pms/fake-video-detector/tree/no-docker) branch, however ffmpeg, libpizzle, and mogrify MUST be installed on your system - **The non docker branch is no-longer maintained as of April 2019.**
 
 ## Installing:
 Run `./setup.sh` to install the 'fake-video' command into your local bash/zsh environment... If you are ONLY going to execute this from another process (i.e. Radarr or Sonarr) you may skip this step.
