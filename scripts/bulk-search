@@ -3,9 +3,10 @@
 # An easy way to find all existing videos that have been downloaded and run them through the 'fake-video' program.
 ################################################################################################
 
-SEARCH_LOCATION='/nas/*/Movies'
 LOG_FILE="fake-movie-paths.txt"
 MIN_SIZE=30M
+REMOVE_FILES=0
+SEARCH_LOCATION="/"
 FILE_EXTENSIONS=(
     "mp4"
     "m4a"
@@ -16,6 +17,39 @@ FILE_EXTENSIONS=(
     "wmv"
     "mkv"
 )
+
+function usage()
+{
+    echo -e "Usage:\n"
+    echo -e "$0"
+    echo -e "\t-h --help"
+    echo -e "\t--search-location=\"<path>\" \t Specify the directory you would like to search - Wildcards are accepted i.e. '/nas/*/Movies'"
+    echo -e "\t--remove \t\t\t If specified, will delete any files matched (DOES NOT RUN BY DEFAULT)"
+    echo -e ""
+}
+
+while [ "$1" != "" ]; do
+    PARAM=`echo $1 | awk -F= '{print $1}'`
+    VALUE=`echo $1 | awk -F= '{print $2}'`
+    case $PARAM in
+        -h | --help)
+            usage
+            exit
+            ;;
+        --remove)
+            REMOVE_FILES=1
+            ;;
+        --search-location)
+            SEARCH_LOCATION=$VALUE
+            ;;
+        *)
+            echo "ERROR: unknown parameter \"$PARAM\""
+            usage
+            exit 1
+            ;;
+    esac
+    shift
+done
 
 # No need to edit below here.
 ################################################################################################
@@ -66,8 +100,14 @@ for filename in "${process_movies[@]}"; do :
     shortName="${filename##*/}"
 
     prog "$taskpercent" $shortName...
-    ./fake-video --silent --log --video="$filename" 
-    exitCode=$?
+
+    if [ $REMOVE_FILES = 1 ]; then
+        fake-video --silent --log --video="$filename" --remove
+        exitCode=$?
+    else
+        fake-video --silent --log --video="$filename"
+        exitCode=$?
+    fi
 
     if [ $exitCode -eq 1 ]; then
 

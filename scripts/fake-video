@@ -3,8 +3,8 @@
 # Script to detect fake videos, based upon a 'database' of screenshots of fake videos.
 # Comments, changes and fixes welcome!
 #
-# Author: David Nedved
-# https://github.com/david-nedved/ultimate-plex-setup/
+# Author: Ned Kelly
+# hhttps://github.com/ultimate-pms/fake-video-detector
 #
 
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
@@ -37,7 +37,7 @@ function usage()
     echo -e "\nThis program attempts to auto-match & delete fake movies that may have been downloaded based on a 'thumbnail' blacklist."
     echo -e "Blacklisted videos are detected, based upon a screen-shot which is taken from a random point in time in the video specified."
     echo -e "If any matches are found, the script will then either log or totally remove the file."
-    echo -e "\nAuthor: David Nedved\nBugs: https://github.com/david-nedved/ultimate-plex-setup/issues"
+    echo -e "\nAuthor: Ned Kelly\nBugs: https://github.com/ultimate-pms/fake-video-detector/issues"
     echo -e "\n\nUsage:\n"
     echo -e "$0"
     echo -e "\t-h --help"
@@ -207,6 +207,11 @@ for image in $RESIZED_DIR/*; do
 
         cleanUp
         exit 1
+    else
+        if [ "$SILENT" -ne 1 ]; then
+            echo "No matches found in DB - Video is OK."
+            echo "** If results are incorrect, please report fakes at: https://github.com/ultimate-pms/fake-video-detector **"
+        fi
     fi
 done
 
