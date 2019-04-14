@@ -34,7 +34,11 @@ The script straight out of the box, you'll require:
 If you _must_ run the script without docker, you may use the copy of the script in the [no-docker](https://github.com/ultimate-pms/fake-video-detector/tree/no-docker) branch, however ffmpeg, libpizzle, and mogrify MUST be installed on your system - **The non docker branch is no-longer maintained as of April 2019.**
 
 ## Installing:
-Run `./setup.sh` to install the 'fake-video' command into your local bash/zsh environment... If you are ONLY going to execute this from another process (i.e. Radarr or Sonarr) you may skip this step.
+Run `./setup.sh` to install the `'fake-video'` and `'bulk-search'` commands into your local bash/zsh environment... You will also need to provide the FULL path to your media directory so it can be mapped into the docker container.
+
+If you need to edit the volumes after you have run the install script, you may directly edit the alias in your ~/.zshrc and/or ~/.bashrc files.
+
+If you are ONLY going to execute this from another process (i.e. Radarr or Sonarr) you may skip this step.
 
 ## Running:
 
@@ -68,7 +72,7 @@ Note that files will not be auto-deleted with bulk-search unless you specify the
 This is the main script which actually processes the video file. If you are integrating to your PVR or BitTorrent client this is the script you will want to execute. Arguments currently supported as as follows:
 
 ```
-./fake-video
+fake-video
 	-h --help
 	--video="<path>" 	 Specify full path to video file in double quotes
 	--threshold="0.20" 	 The threshold (between 0 - 1) that a video is matched against - a value of 0 will be blacklisted, and 1 will count as passing. Suggest leaving at default of 0.20
@@ -82,7 +86,7 @@ This is the main script which actually processes the video file. If you are inte
 ### `bulk-search`:
 
 ```
-./bulk-search
+bulk-search
 	-h --help
 	--search-location="<path>" 	 Specify the directory you would like to search - Wildcards are accepted i.e. '/nas/*/Movies'
 	--remove 			 If specified, will delete any files matched (DOES NOT RUN BY DEFAULT)
